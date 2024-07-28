@@ -38,4 +38,52 @@ class TaskRepository(application: Application) {
         }
     }
 
+    fun deleteTask(task : Task) = MutableLiveData<Resource<Int>>().apply {
+        postValue(Loading())
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                val result = taskDao.deleteTask(task)
+                postValue(Success(result))
+            }
+        } catch (e : Exception) {
+            postValue(Error(e.message.toString()))
+        }
+    }
+
+    fun deleteTaskUsingId(taskId : String) = MutableLiveData<Resource<Int>>().apply {
+        postValue(Loading())
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                val result = taskDao.deleteTaskUsingId(taskId)
+                postValue(Success(result))
+            }
+        } catch (e : Exception) {
+            postValue(Error(e.message.toString()))
+        }
+    }
+
+    fun updateTask(task : Task) = MutableLiveData<Resource<Int>>().apply {
+        postValue(Loading())
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                val result = taskDao.updateTask(task)
+                postValue(Success(result))
+            }
+        } catch (e : Exception) {
+            postValue(Error(e.message.toString()))
+        }
+    }
+
+    fun updateTaskParticularField(taskId : String, title : String, description : String) = MutableLiveData<Resource<Int>>().apply {
+        postValue(Loading())
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                val result = taskDao.updateTaskParticularField(taskId, title, description)
+                postValue(Success(result))
+            }
+        } catch (e : Exception) {
+            postValue(Error(e.message.toString()))
+        }
+    }
+
 }

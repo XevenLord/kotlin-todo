@@ -17,4 +17,20 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         return taskRepository.insertTask(task)
     }
 
+    fun deleteTask(task : Task) : MutableLiveData<Resource<Int>> {
+        return taskRepository.deleteTask(task)
+    }
+
+    fun deleteTaskUsingId(taskId : String) : MutableLiveData<Resource<Int>> {
+        return taskRepository.deleteTaskUsingId(taskId)
+    }
+
+    fun updateTask(task : Task) : MutableLiveData<Resource<Int>> {
+        return taskRepository.updateTask(task)
+    }
+
+    fun updateTaskUsingId(taskId : String, title : String, description : String) : MutableLiveData<Resource<Int>> {
+        return taskRepository.updateTaskParticularField(taskId, title, description)
+    }
+
 }
