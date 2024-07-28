@@ -8,11 +8,24 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout.DispatchChangeEvent
+import androidx.lifecycle.ViewModelProvider
+import com.example.todo_app.adapters.TaskRecyclerViewAdapter
 import com.example.todo_app.databinding.ActivityMainBinding
+import com.example.todo_app.models.Task
+import com.example.todo_app.utils.Status
+import com.example.todo_app.utils.clearEditText
+import com.example.todo_app.utils.longToastShow
 import com.example.todo_app.utils.setupDialog
 import com.example.todo_app.utils.validateEditText
+import com.example.todo_app.viewmodels.TaskViewModel
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.util.Date
+import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
 
@@ -38,9 +51,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val taskViewModel : TaskViewModel by lazy {
+        ViewModelProvider(this)[TaskViewModel::class.java]
+    }
+
+    private val taskRecyclerViewAdapter : TaskRecyclerViewAdapter by lazy {
+        TaskRecyclerViewAdapter()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(mainBinding.root)
+
+        mainBinding.taskRV.adapter = taskRecyclerViewAdapter
 
         // add task start
         val addCloseImg = addTaskDialog.findViewById<ImageView>(R.id.closeImg)
@@ -70,14 +93,37 @@ class MainActivity : AppCompatActivity() {
         })
 
         mainBinding.addTaskFABtn.setOnClickListener {
+            clearEditText(addETTitle, addETTitleL)
+            clearEditText(addETDesc, addETDescL)
             addTaskDialog.show()
         }
         val saveTaskBtn = addTaskDialog.findViewById<Button>(R.id.saveTaskBtn)
         saveTaskBtn.setOnClickListener {
             if (validateEditText(addETTitle, addETTitleL) && validateEditText(addETDesc, addETDescL)) {
                 addTaskDialog.dismiss()
-                Toast.makeText(this, "validated!", Toast.LENGTH_LONG).show()
-                loadingDialog.show()
+                val newTask = Task(
+                    UUID.randomUUID().toString(),
+                    addETTitle.text.toString().trim(),
+                    addETDesc.text.toString().trim(),
+                    Date()
+                )
+                taskViewModel.insertTask(newTask).observe(this) {
+                    when(it.status) {
+                        Status.LOADING -> {
+                            loadingDialog.show()
+                        }
+                        Status.SUCCESS -> {
+                            loadingDialog.dismiss()
+                            if (it.data?.toInt() != -1) {
+                                longToastShow("Task Added Successfully")
+                            }
+                        }
+                        Status.ERROR -> {
+                            loadingDialog.dismiss()
+                            it.message?.let { it1 -> longToastShow(it1) }
+                        }
+                    }
+                }
             }
         }
 
@@ -120,6 +166,31 @@ class MainActivity : AppCompatActivity() {
         }
         // Update task end
 
+        callGetTaskList()
+    }
 
+    private fun callGetTaskList() {
+        loadingDialog.show()
+        CoroutineScope(Dispatchers.Main).launch {
+            taskViewModel.getTaskList().collect {
+                when (it.status) {
+                    Status.LOADING -> {
+                        loadingDialog.show()
+                    }
+
+                    Status.SUCCESS -> {
+                        it.data?.collect {taskList ->
+                            loadingDialog.dismiss()
+                            taskRecyclerViewAdapter.addAllTask(taskList)
+                        }
+                    }
+
+                    Status.ERROR -> {
+                        loadingDialog.dismiss()
+                        it.message?.let { it1 -> longToastShow(it1) }
+                    }
+                }
+            }
+        }
     }
 }
