@@ -11,8 +11,11 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.todo_app.adapters.TaskRVVBListAdapter
 import com.example.todo_app.databinding.ActivityMainBinding
 import com.example.todo_app.models.Task
@@ -62,6 +65,10 @@ class MainActivity : AppCompatActivity() {
 
     private val taskViewModel : TaskViewModel by lazy {
         ViewModelProvider(this)[TaskViewModel::class.java]
+    }
+
+    private val isListMutableLiveData = MutableLiveData<Boolean>().apply {
+        postValue(true)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -154,7 +161,25 @@ class MainActivity : AppCompatActivity() {
         }
         // Update task end
 
-        val taskRVVBListAdapter = TaskRVVBListAdapter { type, position, task ->
+        isListMutableLiveData.observe(this) {
+            if (it) {
+                mainBinding.taskRV.layoutManager = LinearLayoutManager(
+                    this, LinearLayoutManager.VERTICAL, false
+                )
+                mainBinding.listOrGridImg.setImageResource(R.drawable.ic_view_module)
+            } else {
+                mainBinding.taskRV.layoutManager = StaggeredGridLayoutManager(
+                    2, LinearLayoutManager.VERTICAL
+                )
+                mainBinding.listOrGridImg.setImageResource(R.drawable.ic_view_list)
+            }
+        }
+
+        mainBinding.listOrGridImg.setOnClickListener {
+            isListMutableLiveData.postValue(!isListMutableLiveData.value!!)
+        }
+
+        val taskRVVBListAdapter = TaskRVVBListAdapter(isListMutableLiveData) { type, position, task ->
             if (type == "delete") {
                 taskViewModel
                     // Deleted task
