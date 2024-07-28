@@ -4,6 +4,7 @@ import android.app.Dialog
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
@@ -11,12 +12,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.example.todo_app.adapters.TaskRVVBListAdapter
-import com.example.todo_app.adapters.TaskRVViewBindingAdapter
-import com.example.todo_app.adapters.TaskRecyclerViewAdapter
 import com.example.todo_app.databinding.ActivityMainBinding
 import com.example.todo_app.models.Task
 import com.example.todo_app.utils.Status
+import com.example.todo_app.utils.StatusResult
+import com.example.todo_app.utils.StatusResult.*
 import com.example.todo_app.utils.clearEditText
+import com.example.todo_app.utils.hideKeyBoard
 import com.example.todo_app.utils.longToastShow
 import com.example.todo_app.utils.setupDialog
 import com.example.todo_app.utils.validateEditText
@@ -25,6 +27,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.UUID
@@ -96,30 +99,15 @@ class MainActivity : AppCompatActivity() {
         val saveTaskBtn = addTaskDialog.findViewById<Button>(R.id.saveTaskBtn)
         saveTaskBtn.setOnClickListener {
             if (validateEditText(addETTitle, addETTitleL) && validateEditText(addETDesc, addETDescL)) {
-                addTaskDialog.dismiss()
                 val newTask = Task(
                     UUID.randomUUID().toString(),
                     addETTitle.text.toString().trim(),
                     addETDesc.text.toString().trim(),
                     Date()
                 )
-                taskViewModel.insertTask(newTask).observe(this) {
-                    when(it.status) {
-                        Status.LOADING -> {
-                            loadingDialog.show()
-                        }
-                        Status.SUCCESS -> {
-                            loadingDialog.dismiss()
-                            if (it.data?.toInt() != -1) {
-                                longToastShow("Task Added Successfully")
-                            }
-                        }
-                        Status.ERROR -> {
-                            loadingDialog.dismiss()
-                            it.message?.let { it1 -> longToastShow(it1) }
-                        }
-                    }
-                }
+                hideKeyBoard(it)
+                addTaskDialog.dismiss()
+                taskViewModel.insertTask(newTask)
             }
         }
 
@@ -167,23 +155,6 @@ class MainActivity : AppCompatActivity() {
                 taskViewModel
 //                .deleteTask(task)
                     .deleteTaskUsingId(task.id)
-                    .observe(this) {
-                        when(it.status) {
-                            Status.LOADING -> {
-                                loadingDialog.show()
-                            }
-                            Status.SUCCESS -> {
-                                loadingDialog.dismiss()
-                                if (it.data != -1) {
-                                    longToastShow("Task Deleted Successfully")
-                                }
-                            }
-                            Status.ERROR -> {
-                                loadingDialog.dismiss()
-                                it.message?.let { it1 -> longToastShow(it1) }
-                            }
-                        }
-                    }
             } else if (type == "update") {
                 updateETTitle.setText(task.title)
                 updateETDesc.setText(task.description)
@@ -197,32 +168,15 @@ class MainActivity : AppCompatActivity() {
                             updateETDesc.text.toString().trim(),
                             Date()
                         )
+                        hideKeyBoard(it)
                         updateTaskDialog.dismiss()
-                        loadingDialog.show()
                         taskViewModel
-//                            .updateTask(updateTask)
-                            .updateTaskUsingId(
-                                task.id,
-                                updateETTitle.text.toString().trim(),
-                                updateETDesc.text.toString().trim()
-                            )
-                            .observe(this) {
-                                when(it.status) {
-                                    Status.LOADING -> {
-                                        loadingDialog.show()
-                                    }
-                                    Status.SUCCESS -> {
-                                        loadingDialog.dismiss()
-                                        if (it.data != -1) {
-                                            longToastShow("Task Updated Successfully")
-                                        }
-                                    }
-                                    Status.ERROR -> {
-                                        loadingDialog.dismiss()
-                                        it.message?.let { it1 -> longToastShow(it1) }
-                                    }
-                                }
-                            }
+                            .updateTask(updateTask)
+//                            .updateTaskUsingId(
+//                                task.id,
+//                                updateETTitle.text.toString().trim(),
+//                                updateETDesc.text.toString().trim()
+//                            )
                     }
                 }
                 updateTaskDialog.show()
@@ -237,20 +191,55 @@ class MainActivity : AppCompatActivity() {
             }
         })
         callGetTaskList(taskRVVBListAdapter)
+        taskViewModel.getTaskList()
+        statusCallback()
     }
 
-    private fun callGetTaskList(taskRecyclerViewAdapter: TaskRVVBListAdapter) {
-        loadingDialog.show()
-        CoroutineScope(Dispatchers.Main).launch {
-            taskViewModel.getTaskList().collect {
+    private fun statusCallback() {
+        taskViewModel
+            .statusLiveData
+            .observe(this) {
                 when (it.status) {
                     Status.LOADING -> {
                         loadingDialog.show()
                     }
 
                     Status.SUCCESS -> {
+                        loadingDialog.dismiss()
+                        when(it.data as StatusResult) {
+                            Added -> {
+                                Log.d("StatusResult", "Added")
+                            }
+                            Deleted -> {
+                                Log.d("StatusResult", "Deleted")
+                            }
+                            Updated -> {
+                                Log.d("StatusResult","Updated")
+                            }
+                        }
+
+                        it.message?.let { it1 -> longToastShow(it1) }
+                    }
+                    Status.ERROR -> {
+                        loadingDialog.dismiss()
+                        it.message?.let { it1 -> longToastShow(it1) }
+                    }
+                }
+            }
+    }
+
+    private fun callGetTaskList(taskRecyclerViewAdapter: TaskRVVBListAdapter) {
+        CoroutineScope(Dispatchers.Main).launch {
+            taskViewModel.taskStateFlow
+                .collectLatest {
+                when (it.status) {
+                    Status.LOADING -> {
+                        loadingDialog.show()
+                    }
+
+                    Status.SUCCESS -> {
+                        loadingDialog.dismiss()
                         it.data?.collect {taskList ->
-                            loadingDialog.dismiss()
                             taskRecyclerViewAdapter.submitList(taskList)
                         }
                     }

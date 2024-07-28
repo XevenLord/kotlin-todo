@@ -33,7 +33,7 @@ class TaskRVViewBindingAdapter(
         viewType: Int
     ): TaskRVViewBindingAdapter.ViewHolder {
         return ViewHolder(
-            ViewTaskLayoutBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+            ViewTaskLayoutBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         )
     }
 

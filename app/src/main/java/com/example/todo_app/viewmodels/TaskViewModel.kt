@@ -10,27 +10,29 @@ import com.example.todo_app.utils.Resource
 class TaskViewModel(application: Application) : AndroidViewModel(application) {
 
     private val taskRepository = TaskRepository(application)
+    val taskStateFlow get() = taskRepository.taskStateFlow
+    val statusLiveData get() = taskRepository.statusLiveData
 
     fun getTaskList() = taskRepository.getTaskList()
 
-    fun insertTask(task : Task) : MutableLiveData<Resource<Long>> {
-        return taskRepository.insertTask(task)
+    fun insertTask(task : Task) {
+        taskRepository.insertTask(task)
     }
 
-    fun deleteTask(task : Task) : MutableLiveData<Resource<Int>> {
-        return taskRepository.deleteTask(task)
+    fun deleteTask(task : Task) {
+        taskRepository.deleteTask(task)
     }
 
-    fun deleteTaskUsingId(taskId : String) : MutableLiveData<Resource<Int>> {
-        return taskRepository.deleteTaskUsingId(taskId)
+    fun deleteTaskUsingId(taskId : String) {
+        taskRepository.deleteTaskUsingId(taskId)
     }
 
-    fun updateTask(task : Task) : MutableLiveData<Resource<Int>> {
-        return taskRepository.updateTask(task)
+    fun updateTask(task : Task) {
+        taskRepository.updateTask(task)
     }
 
-    fun updateTaskUsingId(taskId : String, title : String, description : String) : MutableLiveData<Resource<Int>> {
-        return taskRepository.updateTaskParticularField(taskId, title, description)
+    fun updateTaskUsingId(taskId : String, title : String, description : String) {
+        taskRepository.updateTaskParticularField(taskId, title, description)
     }
 
 }
