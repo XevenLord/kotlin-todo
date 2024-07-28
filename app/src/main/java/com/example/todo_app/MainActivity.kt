@@ -10,6 +10,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.example.todo_app.adapters.TaskRVVBListAdapter
@@ -191,15 +192,12 @@ class MainActivity : AppCompatActivity() {
 
         }
         mainBinding.taskRV.adapter = taskRVVBListAdapter
+        ViewCompat.setNestedScrollingEnabled(mainBinding.taskRV, false)
         taskRVVBListAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
                 super.onItemRangeInserted(positionStart, itemCount)
-                mainBinding.taskRV.smoothScrollToPosition(positionStart)
-            }
-
-            override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
-                super.onItemRangeMoved(fromPosition, toPosition, itemCount)
-                mainBinding.taskRV.smoothScrollToPosition(0)
+//                mainBinding.taskRV.smoothScrollToPosition(positionStart)
+                mainBinding.nestedScrollView.smoothScrollTo(0, positionStart)
             }
         })
         callGetTaskList(taskRVVBListAdapter)
