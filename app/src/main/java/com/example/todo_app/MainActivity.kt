@@ -24,6 +24,7 @@ import com.example.todo_app.utils.longToastShow
 import com.example.todo_app.utils.setupDialog
 import com.example.todo_app.utils.validateEditText
 import com.example.todo_app.viewmodels.TaskViewModel
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
@@ -154,8 +155,12 @@ class MainActivity : AppCompatActivity() {
         val taskRVVBListAdapter = TaskRVVBListAdapter { type, position, task ->
             if (type == "delete") {
                 taskViewModel
+                    // Deleted task
 //                .deleteTask(task)
                     .deleteTaskUsingId(task.id)
+
+                // Restore Deleted task
+                restoreDeletedTask(task)
             } else if (type == "update") {
                 updateETTitle.setText(task.title)
                 updateETDesc.setText(task.description)
@@ -197,6 +202,17 @@ class MainActivity : AppCompatActivity() {
 
         callSearch()
 
+    }
+
+    private fun restoreDeletedTask(deletedTask: Task) {
+        val snackBar = Snackbar.make(
+            mainBinding.root, "Deleted '${deletedTask.title}'",
+            Snackbar.LENGTH_LONG
+        )
+        snackBar.setAction("Undo") {
+            taskViewModel.insertTask(deletedTask)
+        }
+        snackBar.show()
     }
 
     private fun callSearch() {
