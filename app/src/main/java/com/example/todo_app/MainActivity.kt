@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
@@ -193,6 +194,33 @@ class MainActivity : AppCompatActivity() {
         callGetTaskList(taskRVVBListAdapter)
         taskViewModel.getTaskList()
         statusCallback()
+
+        callSearch()
+
+    }
+
+    private fun callSearch() {
+        mainBinding.edSearch.addTextChangedListener(object : TextWatcher{
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+
+            override fun afterTextChanged(query : Editable) {
+                if (query.toString().isNotEmpty()) {
+                    taskViewModel.searchTaskList(query.toString())
+                } else {
+                    taskViewModel.getTaskList()
+                }
+            }
+        })
+
+        mainBinding.edSearch.setOnEditorActionListener { v, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                hideKeyBoard(v)
+                return@setOnEditorActionListener true
+            }
+            false
+        }
     }
 
     private fun statusCallback() {

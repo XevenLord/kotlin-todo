@@ -104,6 +104,18 @@ class TaskRepository(application: Application) {
         }
     }
 
+    fun searchTaskList(query : String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                _taskStateFlow.emit(Loading())
+                val result = taskDao.searchTaskList("%${query}%")
+                _taskStateFlow.emit(Success("loading", result))
+            } catch (e:Exception) {
+                _taskStateFlow.emit(Error(e.message.toString()))
+            }
+        }
+    }
+
     private fun handleResult(result: Int, message : String, statusResult : StatusResult) {
         if (result != -1) {
             _statusLiveData.postValue(Success(message, statusResult))

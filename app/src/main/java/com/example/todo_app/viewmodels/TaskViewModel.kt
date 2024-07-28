@@ -35,4 +35,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         taskRepository.updateTaskParticularField(taskId, title, description)
     }
 
+    fun searchTaskList(query : String) {
+        taskRepository.searchTaskList(query)
+    }
+
 }
