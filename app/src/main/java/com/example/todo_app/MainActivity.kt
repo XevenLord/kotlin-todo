@@ -210,8 +210,7 @@ class MainActivity : AppCompatActivity() {
 
         val taskRVVBListAdapter = TaskRVVBListAdapter(isListMutableLiveData) { type, position, task ->
             if (type == "delete") {
-                taskViewModel
-                    .deleteTaskUsingId(task.id)
+                taskViewModel.deleteTaskUsingId(task.id)
 
                 // Restore Deleted task
                 restoreDeletedTask(task)
@@ -376,29 +375,46 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun statusCallback() {
-        taskViewModel
-            .statusLiveData
-            .observe(this) {
+        taskViewModel.statusLiveData.observe(this) {
+            when (it.status) {
+                Status.LOADING -> {
+                    loadingDialog.show()
+                }
+                Status.SUCCESS -> {
+                    loadingDialog.dismiss()
+                    when (it.data as StatusResult) {
+                        Added -> {
+                            Log.d("StatusResult", "Added")
+                        }
+                        Deleted -> {
+                            Log.d("StatusResult", "Deleted")
+                        }
+                        Updated -> {
+                            Log.d("StatusResult", "Updated")
+                        }
+                    }
+                    it.message?.let { it1 -> longToastShow(it1) }
+                }
+                Status.ERROR -> {
+                    loadingDialog.dismiss()
+                    it.message?.let { it1 -> longToastShow(it1) }
+                }
+            }
+        }
+    }
+
+    private fun callGetTaskList(taskRecyclerViewAdapter: TaskRVVBListAdapter) {
+        CoroutineScope(Dispatchers.Main).launch {
+            taskViewModel.taskStateFlow.collectLatest {
                 when (it.status) {
                     Status.LOADING -> {
                         loadingDialog.show()
                     }
-
                     Status.SUCCESS -> {
                         loadingDialog.dismiss()
-                        when (it.data as StatusResult) {
-                            Added -> {
-                                Log.d("StatusResult", "Added")
-                            }
-                            Deleted -> {
-                                Log.d("StatusResult", "Deleted")
-                            }
-                            Updated -> {
-                                Log.d("StatusResult", "Updated")
-                            }
+                        it.data?.collect { taskList ->
+                            taskRecyclerViewAdapter.submitList(taskList)
                         }
-
-                        it.message?.let { it1 -> longToastShow(it1) }
                     }
                     Status.ERROR -> {
                         loadingDialog.dismiss()
@@ -406,29 +422,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-    }
-
-    private fun callGetTaskList(taskRecyclerViewAdapter: TaskRVVBListAdapter) {
-        CoroutineScope(Dispatchers.Main).launch {
-            taskViewModel.taskStateFlow
-                .collectLatest {
-                    when (it.status) {
-                        Status.LOADING -> {
-                            loadingDialog.show()
-                        }
-
-                        Status.SUCCESS -> {
-                            loadingDialog.dismiss()
-                            it.data?.collect { taskList ->
-                                taskRecyclerViewAdapter.submitList(taskList)
-                            }
-                        }
-                        Status.ERROR -> {
-                            loadingDialog.dismiss()
-                            it.message?.let { it1 -> longToastShow(it1) }
-                        }
-                    }
-                }
         }
     }
 }

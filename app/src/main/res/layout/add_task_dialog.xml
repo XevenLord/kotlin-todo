@@ -8,106 +8,142 @@
     app:cardBackgroundColor="@color/white"
     app:cardElevation="10dp">
 
-    <RelativeLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-
-        <TextView
-            android:id="@+id/titleTaskTxt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="New Task"
-            android:textStyle="bold"
-            android:textSize="24sp"/>
-
-        <ImageView
-            android:id="@+id/closeImg"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_margin="8dp"
-            android:layout_alignParentEnd="true"
-            android:src="@drawable/ic_close"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="3dp"
-            android:layout_below="@+id/titleTaskTxt"
-            android:background="@color/black"
-            android:id="@+id/viewHLine"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/viewHLine"
-            android:layout_centerHorizontal="true"
-            android:layout_marginVertical="8dp"
-            android:layout_marginHorizontal="10dp"
             android:orientation="vertical">
-
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.App.TextInputLayout"
-                android:id="@+id/edTaskTitleL"
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Enter the Task Title">
-                <com.google.android.material.textfield.TextInputEditText
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/titleTaskTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="16dp"
+                    android:text="New Task"
+                    android:textStyle="bold"
+                    android:textSize="24sp"/>
+
+                <ImageView
+                    android:id="@+id/closeImg"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="8dp"
+                    android:layout_alignParentEnd="true"
+                    android:src="@drawable/ic_close"/>
+
+                <View
                     android:layout_width="match_parent"
-                    android:layout_height="?actionBarSize"
-                    android:id="@+id/edTaskTitle"
-                    android:background="#EAE4E8"
-                    android:inputType="text" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_height="3dp"
+                    android:layout_below="@+id/titleTaskTxt"
+                    android:background="@color/black"
+                    android:id="@+id/viewHLine"/>
 
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.App.TextInputLayout"
-                android:id="@+id/edTaskDescL"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Enter the Task Description">
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/edTaskDesc"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="top|start"
-                    android:inputType="textMultiLine"
-                    android:lines="5"
-                    android:maxLines="5"
-                    android:background="#EAE4E8" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_below="@id/viewHLine"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginVertical="8dp"
+                    android:layout_marginHorizontal="10dp"
+                    android:orientation="vertical">
 
-            <!-- ImageView to display the selected image -->
-            <ImageView
-                android:id="@+id/selectedTaskImage"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_marginVertical="8dp"
-                android:background="#EAE4E8"
-                android:contentDescription="@string/task_image_placeholder"
-                android:scaleType="centerCrop" />
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.App.TextInputLayout"
+                        android:id="@+id/edTaskTitleL"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Enter the Task Title">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:layout_width="match_parent"
+                            android:layout_height="?actionBarSize"
+                            android:id="@+id/edTaskTitle"
+                            android:background="#EAE4E8"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Button to select an image -->
-            <Button
-                android:id="@+id/selectImageBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/black"
-                android:text="Select Image"
-                android:textColor="@color/white"
-                android:textSize="16sp" />
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.App.TextInputLayout"
+                        android:id="@+id/edTaskDescL"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Enter the Task Description">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/edTaskDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="top|start"
+                            android:inputType="textMultiLine"
+                            android:lines="5"
+                            android:maxLines="5"
+                            android:background="#EAE4E8" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-            <Button
-                android:id="@+id/saveTaskBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="?actionBarSize"
-                android:layout_gravity="center"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/black"
-                style="@style/Widget.App.Button.Fill"
-                android:text="Save Task"
-                android:textSize="20sp" />
+                    <TextView
+                        android:id="@+id/edDateTimeTitle"
+                        android:layout_below="@id/edTaskDescL"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Date &amp; Time"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <!-- Date Picker -->
+                    <DatePicker
+                        android:id="@+id/edTaskDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:datePickerMode="spinner"
+                        android:calendarViewShown="false"/>
+
+                    <!-- Time Picker -->
+
+                    <TimePicker
+                        android:id="@+id/edTimePicker"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:timePickerMode="spinner"/>
+
+                    <!-- ImageView to display the selected image -->
+                    <ImageView
+                        android:id="@+id/selectedTaskImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:layout_marginVertical="8dp"
+                        android:background="#EAE4E8"
+                        android:contentDescription="@string/task_image_placeholder"
+                        android:scaleType="centerCrop" />
+
+                    <!-- Button to select an image -->
+                    <Button
+                        android:id="@+id/selectImageBtn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="8dp"
+                        android:backgroundTint="@color/black"
+                        android:text="Select Image"
+                        android:textColor="@color/white"
+                        android:textSize="16sp" />
+
+                    <Button
+                        android:id="@+id/saveTaskBtn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="?actionBarSize"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="8dp"
+                        android:backgroundTint="@color/black"
+                        style="@style/Widget.App.Button.Fill"
+                        android:text="Save Task"
+                        android:textSize="20sp" />
+
+                </LinearLayout>
+            </RelativeLayout>
         </LinearLayout>
-    </RelativeLayout>
+    </ScrollView>
 </com.google.android.material.card.MaterialCardView>
