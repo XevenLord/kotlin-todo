@@ -11,7 +11,9 @@ import android.text.TextWatcher
 import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
+import android.widget.DatePicker
 import android.widget.ImageView
+import android.widget.TimePicker
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -42,6 +44,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
+import java.util.Calendar
 import java.util.Date
 import java.util.UUID
 
@@ -97,6 +100,10 @@ class MainActivity : AppCompatActivity() {
             addTaskDialog.dismiss()
         }
 
+        val addTaskDatePicker = addTaskDialog.findViewById<DatePicker>(R.id.edTaskDate)
+        val addTaskTimePicker = addTaskDialog.findViewById<TimePicker>(R.id.edTaskTimePicker)
+
+
         val addETTitle = addTaskDialog.findViewById<TextInputEditText>(R.id.edTaskTitle)
         val addETTitleL = addTaskDialog.findViewById<TextInputLayout>(R.id.edTaskTitleL)
 
@@ -132,11 +139,12 @@ class MainActivity : AppCompatActivity() {
         val saveTaskBtn = addTaskDialog.findViewById<Button>(R.id.saveTaskBtn)
         saveTaskBtn.setOnClickListener {
             if (validateEditText(addETTitle, addETTitleL) && validateEditText(addETDesc, addETDescL)) {
+                val date = combineDateAndTime(addTaskDatePicker, addTaskTimePicker)
                 val newTask = Task(
                     UUID.randomUUID().toString(),
                     addETTitle.text.toString().trim(),
                     addETDesc.text.toString().trim(),
-                    Date(),
+                    date,
                     selectedImageData
                 )
                 hideKeyBoard(it)
@@ -148,6 +156,9 @@ class MainActivity : AppCompatActivity() {
         // Add task end
 
         // Update task start
+        val updateTaskDatePicker = updateTaskDialog.findViewById<DatePicker>(R.id.edTaskDate)
+        val updateTaskTimePicker = updateTaskDialog.findViewById<TimePicker>(R.id.edTaskTimePicker)
+
         val updateETTitle = updateTaskDialog.findViewById<TextInputEditText>(R.id.edTaskTitle)
         val updateETTitleL = updateTaskDialog.findViewById<TextInputLayout>(R.id.edTaskTitleL)
 
@@ -222,11 +233,12 @@ class MainActivity : AppCompatActivity() {
                     if (validateEditText(updateETTitle, updateETTitleL)
                         && validateEditText(updateETDesc, updateETDescL)
                     ) {
+                        val date = combineDateAndTime(updateTaskDatePicker, updateTaskTimePicker)
                         val updatedTask = Task(
                             task.id,
                             updateETTitle.text.toString().trim(),
                             updateETDesc.text.toString().trim(),
-                            Date(),
+                            date,
                             updateSelectedImageData
                         )
                         hideKeyBoard(it)
@@ -251,6 +263,15 @@ class MainActivity : AppCompatActivity() {
         statusCallback()
 
         callSearch()
+    }
+
+    private fun combineDateAndTime(datePicker: DatePicker, timePicker: TimePicker): Date {
+        val calendar = Calendar.getInstance()
+
+        calendar.set(datePicker.year, datePicker.month, datePicker.dayOfMonth,
+            timePicker.hour, timePicker.minute)
+
+        return calendar.time
     }
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->

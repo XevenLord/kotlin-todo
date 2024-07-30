@@ -104,7 +104,7 @@
                     <!-- Time Picker -->
 
                     <TimePicker
-                        android:id="@+id/edTimePicker"
+                        android:id="@+id/edTaskTimePicker"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:timePickerMode="spinner"/>
