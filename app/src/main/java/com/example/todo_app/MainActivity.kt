@@ -1,7 +1,11 @@
 package com.example.todo_app
 
 import android.app.Dialog
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -9,6 +13,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.MutableLiveData
@@ -36,6 +41,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 import java.util.Date
 import java.util.UUID
 
@@ -45,25 +51,31 @@ class MainActivity : AppCompatActivity() {
         ActivityMainBinding.inflate(layoutInflater)
     }
 
-    private val addTaskDialog : Dialog by lazy {
+    private val addTaskDialog: Dialog by lazy {
         Dialog(this, R.style.DialogCustomTheme).apply {
             setupDialog(R.layout.add_task_dialog)
+            setOnDismissListener {
+                resetAddTaskDialog()
+            }
         }
     }
 
-    private val updateTaskDialog : Dialog by lazy {
+    private val updateTaskDialog: Dialog by lazy {
         Dialog(this, R.style.DialogCustomTheme).apply {
             setupDialog(R.layout.update_task_dialog)
+            setOnDismissListener {
+                resetUpdateTaskDialog()
+            }
         }
     }
 
-    private val loadingDialog : Dialog by lazy {
+    private val loadingDialog: Dialog by lazy {
         Dialog(this, R.style.DialogCustomTheme).apply {
             setupDialog(R.layout.loading_dialog)
         }
     }
 
-    private val taskViewModel : TaskViewModel by lazy {
+    private val taskViewModel: TaskViewModel by lazy {
         ViewModelProvider(this)[TaskViewModel::class.java]
     }
 
@@ -71,36 +83,46 @@ class MainActivity : AppCompatActivity() {
         postValue(true)
     }
 
+    private var selectedImageData: ByteArray? = null
+
+    private var updateSelectedImageData: ByteArray? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(mainBinding.root)
 
         // add task start
         val addCloseImg = addTaskDialog.findViewById<ImageView>(R.id.closeImg)
-        addCloseImg.setOnClickListener { addTaskDialog.dismiss() }
+        addCloseImg.setOnClickListener {
+            addTaskDialog.dismiss()
+        }
 
         val addETTitle = addTaskDialog.findViewById<TextInputEditText>(R.id.edTaskTitle)
         val addETTitleL = addTaskDialog.findViewById<TextInputLayout>(R.id.edTaskTitleL)
 
-        addETTitle.addTextChangedListener(object: TextWatcher {
+        addETTitle.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(s: Editable) {
                 validateEditText(addETTitle, addETTitleL)
             }
-
         })
 
         val addETDesc = addTaskDialog.findViewById<TextInputEditText>(R.id.edTaskDesc)
         val addETDescL = addTaskDialog.findViewById<TextInputLayout>(R.id.edTaskDescL)
 
-        addETDesc.addTextChangedListener(object: TextWatcher {
+        addETDesc.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(s: Editable) {
                 validateEditText(addETDesc, addETDescL)
             }
         })
+
+        val selectImageBtn = addTaskDialog.findViewById<Button>(R.id.selectImageBtn)
+        selectImageBtn.setOnClickListener {
+            pickImage()
+        }
 
         mainBinding.addTaskFABtn.setOnClickListener {
             clearEditText(addETTitle, addETTitleL)
@@ -114,7 +136,8 @@ class MainActivity : AppCompatActivity() {
                     UUID.randomUUID().toString(),
                     addETTitle.text.toString().trim(),
                     addETDesc.text.toString().trim(),
-                    Date()
+                    Date(),
+                    selectedImageData
                 )
                 hideKeyBoard(it)
                 addTaskDialog.dismiss()
@@ -128,25 +151,31 @@ class MainActivity : AppCompatActivity() {
         val updateETTitle = updateTaskDialog.findViewById<TextInputEditText>(R.id.edTaskTitle)
         val updateETTitleL = updateTaskDialog.findViewById<TextInputLayout>(R.id.edTaskTitleL)
 
-        updateETTitle.addTextChangedListener(object: TextWatcher {
+
+        updateETTitle.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(s: Editable) {
                 validateEditText(updateETTitle, updateETTitleL)
             }
-
         })
 
         val updateETDesc = updateTaskDialog.findViewById<TextInputEditText>(R.id.edTaskDesc)
         val updateETDescL = updateTaskDialog.findViewById<TextInputLayout>(R.id.edTaskDescL)
+        val updateSelectedImg = updateTaskDialog.findViewById<ImageView>(R.id.selectedTaskImage)
 
-        updateETDesc.addTextChangedListener(object: TextWatcher {
+        updateETDesc.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(s: Editable) {
                 validateEditText(updateETDesc, updateETDescL)
             }
         })
+
+        val selectUpdateImageBtn = updateTaskDialog.findViewById<Button>(R.id.selectUpdateImageBtn)
+        selectUpdateImageBtn.setOnClickListener {
+            pickUpdateImage()
+        }
 
         val updateCloseImg = updateTaskDialog.findViewById<ImageView>(R.id.closeImg)
         updateCloseImg.setOnClickListener { updateTaskDialog.dismiss() }
@@ -182,8 +211,6 @@ class MainActivity : AppCompatActivity() {
         val taskRVVBListAdapter = TaskRVVBListAdapter(isListMutableLiveData) { type, position, task ->
             if (type == "delete") {
                 taskViewModel
-                    // Deleted task
-//                .deleteTask(task)
                     .deleteTaskUsingId(task.id)
 
                 // Restore Deleted task
@@ -191,25 +218,21 @@ class MainActivity : AppCompatActivity() {
             } else if (type == "update") {
                 updateETTitle.setText(task.title)
                 updateETDesc.setText(task.description)
+                updateSelectedImg.setImageBitmap(task.imageData?.let { byteArrayToBitmap(it) })
                 updateTaskBtn.setOnClickListener {
                     if (validateEditText(updateETTitle, updateETTitleL)
                         && validateEditText(updateETDesc, updateETDescL)
                     ) {
-                        val updateTask = Task(
+                        val updatedTask = Task(
                             task.id,
                             updateETTitle.text.toString().trim(),
                             updateETDesc.text.toString().trim(),
-                            Date()
+                            Date(),
+                            updateSelectedImageData
                         )
                         hideKeyBoard(it)
                         updateTaskDialog.dismiss()
-                        taskViewModel
-                            .updateTask(updateTask)
-//                            .updateTaskUsingId(
-//                                task.id,
-//                                updateETTitle.text.toString().trim(),
-//                                updateETDesc.text.toString().trim()
-//                            )
+                        taskViewModel.updateTask(updatedTask)
                     }
                 }
                 updateTaskDialog.show()
@@ -221,7 +244,6 @@ class MainActivity : AppCompatActivity() {
         taskRVVBListAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
                 super.onItemRangeInserted(positionStart, itemCount)
-//                mainBinding.taskRV.smoothScrollToPosition(positionStart)
                 mainBinding.nestedScrollView.smoothScrollTo(0, positionStart)
             }
         })
@@ -230,8 +252,42 @@ class MainActivity : AppCompatActivity() {
         statusCallback()
 
         callSearch()
-
     }
+
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, it)
+            selectedImageData = bitmapToByteArray(bitmap)
+            addTaskDialog.findViewById<ImageView>(R.id.selectedTaskImage).setImageBitmap(bitmap)
+        }
+    }
+
+    private val pickUpdateImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, it)
+            updateSelectedImageData = bitmapToByteArray(bitmap)
+            updateTaskDialog.findViewById<ImageView>(R.id.selectedTaskImage).setImageBitmap(bitmap)
+        }
+    }
+
+    private fun pickImage() {
+        pickImageLauncher.launch("image/*")
+    }
+
+    private fun pickUpdateImage() {
+        pickUpdateImageLauncher.launch("image/*")
+    }
+
+    private fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        return stream.toByteArray()
+    }
+
+    private fun byteArrayToBitmap(byteArray: ByteArray): Bitmap {
+        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+    }
+
 
     private fun restoreDeletedTask(deletedTask: Task) {
         val snackBar = Snackbar.make(
@@ -245,12 +301,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun callSearch() {
-        mainBinding.edSearch.addTextChangedListener(object : TextWatcher{
+        mainBinding.edSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
 
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
 
-            override fun afterTextChanged(query : Editable) {
+            override fun afterTextChanged(query: Editable) {
                 if (query.toString().isNotEmpty()) {
                     taskViewModel.searchTaskList(query.toString())
                 } else {
@@ -277,7 +333,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun callSortByDialog() {
-        var checkedItem = 2   // 2 is default item set
+        var checkedItem = 2 // 2 is default item set
         val items = arrayOf("Title Ascending", "Title Descending", "Date Ascending", "Date Descending")
 
         mainBinding.sortImg.setOnClickListener {
@@ -307,6 +363,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun resetAddTaskDialog() {
+        val imageView = addTaskDialog.findViewById<ImageView>(R.id.selectedTaskImage)
+        imageView.setImageDrawable(null)
+        selectedImageData = null
+    }
+
+    private fun resetUpdateTaskDialog() {
+        val imageView = updateTaskDialog.findViewById<ImageView>(R.id.selectedTaskImage)
+        imageView.setImageDrawable(null)
+        selectedImageData = null
+    }
+
     private fun statusCallback() {
         taskViewModel
             .statusLiveData
@@ -318,7 +386,7 @@ class MainActivity : AppCompatActivity() {
 
                     Status.SUCCESS -> {
                         loadingDialog.dismiss()
-                        when(it.data as StatusResult) {
+                        when (it.data as StatusResult) {
                             Added -> {
                                 Log.d("StatusResult", "Added")
                             }
@@ -326,7 +394,7 @@ class MainActivity : AppCompatActivity() {
                                 Log.d("StatusResult", "Deleted")
                             }
                             Updated -> {
-                                Log.d("StatusResult","Updated")
+                                Log.d("StatusResult", "Updated")
                             }
                         }
 
@@ -344,23 +412,23 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Main).launch {
             taskViewModel.taskStateFlow
                 .collectLatest {
-                when (it.status) {
-                    Status.LOADING -> {
-                        loadingDialog.show()
-                    }
+                    when (it.status) {
+                        Status.LOADING -> {
+                            loadingDialog.show()
+                        }
 
-                    Status.SUCCESS -> {
-                        loadingDialog.dismiss()
-                        it.data?.collect {taskList ->
-                            taskRecyclerViewAdapter.submitList(taskList)
+                        Status.SUCCESS -> {
+                            loadingDialog.dismiss()
+                            it.data?.collect { taskList ->
+                                taskRecyclerViewAdapter.submitList(taskList)
+                            }
+                        }
+                        Status.ERROR -> {
+                            loadingDialog.dismiss()
+                            it.message?.let { it1 -> longToastShow(it1) }
                         }
                     }
-                    Status.ERROR -> {
-                        loadingDialog.dismiss()
-                        it.message?.let { it1 -> longToastShow(it1) }
-                    }
                 }
-            }
         }
     }
 }

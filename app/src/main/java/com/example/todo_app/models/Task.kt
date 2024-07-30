@@ -15,5 +15,6 @@ data class Task(
     @ColumnInfo(name = "taskTitle")
     val title : String,
     val description : String,
-    val date : Date
+    val date : Date,
+    val imageData: ByteArray? = null
 )

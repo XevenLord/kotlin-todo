@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Todo-App</string>
+    <string name="task_image_placeholder">Upload Your Image</string>
 </resources>
